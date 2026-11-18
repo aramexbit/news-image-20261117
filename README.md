@@ -17,15 +17,16 @@ copies the image deterministically to the output directory.
 ## How the image was made
 
 `build_entry.py` (Python + Pillow, run locally) draws the whole front page
-from a list of verified stories: masthead, red BREAKING ribbon, a duotone
-halftone hero of the Kerch Bridge, 11 more stories each with its own small
-flat illustration, 24 one-line briefs, a numbered world map, and a footer
+from a list of verified stories: masthead, red BREAKING ribbon, a
+photorealistic photo hero of the Kerch Bridge (committed as
+`assets/hero-kerch.png`, cropped and colour-boosted deterministically),
+11 more stories each with its own small flat illustration in its region
+colour, 24 one-line briefs, a numbered world map, and a footer
 naming the sources. Facts were checked against live news reporting of
 17 November 2026 (AP, Reuters, AFP, BBC, Al Jazeera, UN News, WHO);
 disputed claims are attributed in the image itself. Print effects are
-deliberately restrained and deterministic (seeded paper grain, halftone
-dots on the hero sky only, a 2px off-register shift on the hero smoke):
-the text stays sharp and two runs produce byte-identical output.
+deliberately restrained and deterministic (seeded paper grain, vivid
+palette): the text stays sharp and two runs produce byte-identical output.
 
 ## Run it
 

@@ -9,18 +9,22 @@ competition kit, and from GitHub research into dramatic print effects):
   legibility and faithful attribution, and the bottom-ranked entries are all
   photorealistic one-scene art with almost no text.
 - Masthead: navy band, giant serif date, "36 STORIES - 6 CONTINENTS - ONE DAY".
-- Hero: the Kerch Bridge story, duotone navy + signal red, with a halftone
-  dot sky, a red BREAKING ribbon and a big-number stat strip.
+- Hero: the Kerch Bridge story as a photorealistic photo (generated image,
+  committed as assets/hero-kerch.png, cropped and colour-boosted
+  deterministically at build time), with a red BREAKING ribbon and a
+  big-number stat strip.
 - 11 more featured stories with a small flat illustration each (a picture
   per story, as the judge's criterion 3 asks), then 24 one-line briefs.
 - Numbered world map ("WHERE IT HAPPENED") whose dots match the story
   numbers, continent colour legend, sources footer, attribution discipline
   ("Iran says / US says", disputed claims attributed).
-- Dramatic print effects, all deterministic (seeded RNG, no network, no
-  clock): paper grain on the paper layer BEFORE any text is drawn (text
-  stays sharp), a light vignette on the outer frame only, 1-2px off-register
-  red shift on the hero art only, thin drop shadow under the hero card.
-  Two runs produce byte-identical output.
+- Vivid palette (v2): saturated navy/red/gold and one vivid colour per
+  region, brighter paper; the photo hero gets a fixed colour/contrast
+  boost. Dramatic print effects, all deterministic (seeded RNG, no
+  network, no clock): paper grain on the paper layer BEFORE any text is
+  drawn (text stays sharp), a light vignette on the outer frame only,
+  thin drop shadow under the hero card. Two runs produce byte-identical
+  output.
 - Facts were verified against live news (AP/Reuters/AFP/BBC/Al Jazeera/UN
   News reporting of 17 Nov 2026); numbers that could not be verified are
   left out or softened, and claims are attributed in the text.
@@ -30,28 +34,35 @@ Output: entry.png next to this file (1024x1024, <= 1 MiB).
 
 import math
 import random
-from PIL import Image, ImageDraw, ImageFont
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 W, H = 1024, 1024
 SEED = 20261117
 
 # ---------------------------------------------------------------- palette
-NAVY = (15, 32, 64)
-NAVY2 = (22, 45, 88)
-PAPER = (246, 241, 229)
-PAPER2 = (240, 234, 216)
-INK = (26, 26, 26)
+# v2 (user revision 18 Nov 08:32 WIB): vivid — saturated navy/red/gold,
+# one vivid colour per region, brighter paper. The flat v1 palette looked
+# washed-out and unrealistic next to the photo hero.
+NAVY = (10, 40, 118)
+NAVY2 = (16, 66, 168)
+PAPER = (253, 249, 238)
+PAPER2 = (248, 243, 228)
+INK = (22, 22, 22)
 GREY = (90, 90, 90)
-RED = (200, 16, 46)
-GOLD = (201, 162, 39)
-CREAM = (250, 247, 238)
-BLUE = (31, 78, 121)     # Europe
-RUST = (176, 58, 46)     # Middle East
-ORANGE = (199, 91, 18)   # Asia
-GREEN = (46, 125, 50)    # Africa
-PURPLE = (106, 61, 154)  # Americas
-TEAL = (14, 124, 107)    # Oceania
-SLATE = (85, 85, 85)     # Global
+RED = (232, 22, 52)
+GOLD = (226, 178, 32)
+CREAM = (252, 249, 240)
+BLUE = (18, 96, 168)     # Europe
+RUST = (206, 62, 40)     # Middle East
+ORANGE = (232, 110, 12)  # Asia
+GREEN = (32, 148, 56)    # Africa
+PURPLE = (122, 62, 186)  # Americas
+TEAL = (8, 150, 128)     # Oceania
+SLATE = (58, 84, 120)    # Global
+
+HERO_PHOTO = Path(__file__).with_name("assets") / "hero-kerch.png"
 
 FONT_DIR = "/usr/share/fonts/truetype"
 SERIF_B = f"{FONT_DIR}/liberation/LiberationSerif-Bold.ttf"
@@ -311,68 +322,32 @@ ICON_KIND = {2: "radar", 3: "tanker", 4: "flags", 5: "chip", 6: "virus",
 
 
 # ------------------------------------------------------------ hero picture
-def hero_art():
-    """Duotone navy hero: the Kerch Bridge with its road span down.
+def hero_photo():
+    """Photorealistic hero: the Kerch Bridge photo, cropped to the hero box.
 
-    Drawn flat, then a halftone dot field is laid over the sky only, and a
-    2px red off-register copy of the smoke gives the riso-print shift.
+    The source photo is a committed asset (assets/hero-kerch.png); the crop,
+    resize and colour boost below are fixed, so two runs are byte-identical.
+    Two small label chips are drawn over the photo so the place and the
+    bridge length stay legible at a glance.
     Returns an RGB image of the hero box.
     """
     w, h = 500, 192
-    art = Image.new("RGB", (w, h), (214, 226, 238))
+    src = Image.open(HERO_PHOTO).convert("RGB")
+    # centre-crop to the hero aspect (500:192), then resize
+    target = w / h
+    sw, sh = src.size
+    if sw / sh > target:
+        nw = int(sh * target)
+        x0 = (sw - nw) // 2
+        src = src.crop((x0, 0, x0 + nw, sh))
+    else:
+        nh = int(sw / target)
+        y0 = (sh - nh) // 2
+        src = src.crop((0, y0, sw, y0 + nh))
+    art = src.resize((w, h), Image.LANCZOS)
+    art = ImageEnhance.Color(art).enhance(1.25)
+    art = ImageEnhance.Contrast(art).enhance(1.08)
     d = ImageDraw.Draw(art)
-    # sky: pale duotone + halftone dots, denser towards the top
-    rng = random.Random(SEED + 7)
-    for gy in range(6, 78, 9):
-        for gx in range(6, w, 9):
-            r = 1.0 + (78 - gy) / 78 * 2.2
-            if rng.random() < 0.85:
-                d.ellipse([gx - r, gy - r, gx + r, gy + r], fill=(120, 140, 168))
-    # sun, pale
-    d.ellipse([w - 78, 12, w - 18, 72], fill=(226, 196, 120))
-    # smoke: red off-register copy shifted +2px, then navy smoke
-    for ox, col in [(2, (200, 16, 46)), (0, (38, 52, 84))]:
-        for cx, cy, cr in [(150, 52, 26), (178, 38, 20), (205, 55, 24), (228, 42, 15)]:
-            d.ellipse([cx - cr + ox, cy - cr, cx + cr + ox, cy + cr], fill=col)
-    # sea
-    d.rectangle([0, 128, w, h], fill=(38, 68, 110))
-    for wx in range(8, w, 26):
-        d.arc([wx, 138, wx + 20, 152], 180, 360, fill=(214, 226, 238), width=2)
-        d.arc([wx, 168, wx + 20, 182], 180, 360, fill=(214, 226, 238), width=2)
-    # bridge: two A-frame towers, deck left and right standing, middle gone
-    for tx in (70, 400):
-        d.polygon([(tx, 108), (tx + 22, 58), (tx + 30, 58), (tx + 52, 108)],
-                  fill=NAVY)
-        d.line([tx + 26, 58, tx + 6, 108], fill=NAVY, width=2)
-        d.line([tx + 26, 58, tx + 46, 108], fill=NAVY, width=2)
-    d.rectangle([0, 104, 185, 114], fill=NAVY)
-    d.rectangle([330, 104, w, 114], fill=NAVY)
-    # suspension cables from the towers
-    for x0 in range(0, 185, 18):
-        d.line([92, 60, x0, 104], fill=(90, 110, 140), width=1)
-    for x0 in range(330, w, 18):
-        d.line([426, 60, x0, 104], fill=(90, 110, 140), width=1)
-    # fallen span: jagged break, tilted section sinking into the strait
-    d.polygon([(185, 104), (196, 112), (188, 118), (200, 124), (192, 132),
-               (240, 158), (300, 168), (296, 178), (232, 166), (186, 136)],
-              fill=(20, 40, 76))
-    d.polygon([(300, 168), (330, 104), (338, 112), (312, 176)],
-              fill=(20, 40, 76))
-    # burst at the break point + splash
-    for ang in range(0, 360, 30):
-        r = math.radians(ang)
-        x1 = 258 + math.cos(r) * 6
-        y1 = 112 + math.sin(r) * 6
-        x2 = 258 + math.cos(r) * 22
-        y2 = 112 + math.sin(r) * 22
-        d.line([x1, y1, x2, y2], fill=RED, width=3)
-    d.ellipse([248, 102, 268, 122], fill=(226, 196, 120))
-    d.arc([232, 160, 292, 186], 180, 360, fill=(255, 255, 255), width=3)
-    d.arc([240, 170, 284, 192], 180, 360, fill=(255, 255, 255), width=2)
-    # drones
-    for dx, dy in [(90, 22), (300, 30), (420, 18)]:
-        d.polygon([(dx, dy), (dx + 16, dy + 4), (dx, dy + 8)], fill=NAVY)
-    # label chips
     d.rectangle([8, 168, 108, 192], fill=NAVY)
     d.text((14, 173), "KERCH STRAIT", font=font(SANS_B, 13), fill=(255, 255, 255))
     d.rectangle([w - 108, 168, w - 8, 192], fill=RED)
@@ -429,7 +404,7 @@ def build():
     # ---- hero ------------------------------------------------------------
     hy0, hy1 = 144, 340
     d.rectangle([M, hy0, W - M, hy1], outline=NAVY, width=2)
-    img.paste(hero_art(), (M + 2, hy0 + 2))
+    img.paste(hero_photo(), (M + 2, hy0 + 2))
     # thin drop shadow under the hero card
     d.line([M + 6, hy1 + 2, W - M - 2, hy1 + 2], fill=(120, 110, 90), width=2)
     hx = M + 514
@@ -456,7 +431,7 @@ def build():
     for i, (num, lab) in enumerate(stats):
         cx = i * col_w
         if i:
-            d.line([cx, sy0 + 6, cx, sy1 - 6], fill=(90, 110, 150), width=1)
+            d.line([cx, sy0 + 6, cx, sy1 - 6], fill=(120, 150, 205), width=1)
         nf = font(SERIF_B, 22)
         d.text((cx + (col_w - d.textlength(num, font=nf)) / 2, sy0 + 4),
                num, font=nf, fill=(255, 255, 255))
@@ -492,7 +467,9 @@ def build():
         ix, iy, isize = x0 + 32, y0 + 8, 44
         d.rectangle([ix, iy, ix + isize, iy + isize], fill=PAPER2)
         if isinstance(n, int):
-            icon(d, ICON_KIND[n], ix, iy, isize, NAVY2, RED)
+            # v2: each mini illustration is inked in its region colour,
+            # so the grid reads vivid instead of flat navy
+            icon(d, ICON_KIND[n], ix, iy, isize, col, RED)
         else:
             d.text((ix + 6, iy + 12), "$", font=font(SERIF_B, 26), fill=GREEN)
             d.line([ix + 4, iy + 40, ix + 22, iy + 26, ix + 30, iy + 32,
