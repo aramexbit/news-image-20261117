@@ -18,10 +18,11 @@ copies the image deterministically to the output directory.
 
 `build_entry.py` (Python + Pillow, run locally) draws the whole front page
 from a list of verified stories: masthead, red BREAKING ribbon, two heroes
-side by side — a photorealistic photo of the Kerch Bridge (committed as
-`assets/hero-kerch.png`, cropped and colour-boosted deterministically) and
-a flat Gulf map for the Iran/Bahrain story — 12 more stories each with its
-own wide banner illustration in its region colour, 26 one-line briefs, a
+side by side — photorealistic photos of the Kerch Bridge (committed as
+`assets/hero-kerch.png`) and of a burning tanker in the Persian Gulf
+(`assets/photo-gulf.png`) — 12 more stories each with its own wide
+photorealistic photo banner (`assets/photo-*.png`, all generated for this
+entry and cropped deterministically), 26 one-line briefs, a
 world map numbered for all 40 stories, and a footer naming the sources.
 Facts were checked against live news reporting of
 17 November 2026 (AP, Reuters, AFP, BBC, Al Jazeera, UN News, WHO);

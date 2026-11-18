@@ -11,12 +11,14 @@ competition kit, and from GitHub research into dramatic print effects):
 - Masthead: navy band, giant serif date, "40 STORIES - 6 CONTINENTS - ONE DAY".
 - Two heroes side by side (v3, like rank 1): the Kerch Bridge story as a
   photorealistic photo (generated image, committed as
-  assets/hero-kerch.png, cropped and colour-boosted deterministically at
-  build time) and the Iran/Bahrain story as a flat Gulf map with a drone
-  path, with a red BREAKING ribbon and a big-number stat strip.
-- 12 more featured stories, each with a WIDE banner illustration across the
-  top of its cell (v3, like ranks 2-3: tanker, flags, chip, virus, crowd,
-  gavel...), then 26 one-line briefs.
+  assets/hero-kerch.png) and the Iran/Bahrain story as a photorealistic
+  photo of a burning tanker in the Gulf (v4, assets/photo-gulf.png), with
+  a red BREAKING ribbon and a big-number stat strip.
+- 12 more featured stories, each with a WIDE photorealistic photo banner
+  across the top of its cell (v4, user revision 18 Nov 09:14 WIB: the flat
+  banner illustrations are replaced by generated photos, committed as
+  assets/photo-*.png, cropped deterministically at build time), then
+  26 one-line briefs.
 - Numbered world map ("WHERE IT HAPPENED") whose dots match ALL 40 story
   numbers, continent colour legend, sources footer, attribution discipline
   ("Iran says / US says", disputed claims attributed), plus a short
@@ -66,6 +68,12 @@ TEAL = (8, 150, 128)     # Oceania
 SLATE = (58, 84, 120)    # Global
 
 HERO_PHOTO = Path(__file__).with_name("assets") / "hero-kerch.png"
+GULF_PHOTO = Path(__file__).with_name("assets") / "photo-gulf.png"
+# v4: one generated photo per featured story (story number -> asset file)
+PHOTOS = {3: "photo-hormuz.png", 4: "photo-quad.png", 5: "photo-nvidia.png",
+          6: "photo-ebola.png", 7: "photo-measles.png", 8: "photo-mongolia.png",
+          9: "photo-jets.png", 10: "photo-cop31.png", 11: "photo-jpmorgan.png",
+          12: "photo-rwanda.png", 13: "photo-france.png", 14: "photo-knesset.png"}
 
 FONT_DIR = "/usr/share/fonts/truetype"
 SERIF_B = f"{FONT_DIR}/liberation/LiberationSerif-Bold.ttf"
@@ -356,6 +364,50 @@ def hero_photo(w, h):
     return art
 
 
+def banner_photo(n, w, h):
+    """Photorealistic banner for featured story n (v4): committed asset,
+    centre-cropped to the banner aspect, resized, lightly boosted."""
+    src = Image.open(Path(__file__).with_name("assets") / PHOTOS[n]).convert("RGB")
+    target = w / h
+    sw, sh = src.size
+    if sw / sh > target:
+        nw = int(sh * target)
+        x0 = (sw - nw) // 2
+        src = src.crop((x0, 0, x0 + nw, sh))
+    else:
+        nh = int(sw / target)
+        y0 = (sh - nh) // 2
+        src = src.crop((0, y0, sw, y0 + nh))
+    art = src.resize((w, h), Image.LANCZOS)
+    art = ImageEnhance.Color(art).enhance(1.10)
+    art = ImageEnhance.Contrast(art).enhance(1.05)
+    return art
+
+
+def gulf_photo(w, h):
+    """Photorealistic hero 2 (v4): burning tanker in the Gulf, same
+    centre-crop + boost as hero_photo, one label chip."""
+    src = Image.open(GULF_PHOTO).convert("RGB")
+    target = w / h
+    sw, sh = src.size
+    if sw / sh > target:
+        nw = int(sh * target)
+        x0 = (sw - nw) // 2
+        src = src.crop((x0, 0, x0 + nw, sh))
+    else:
+        nh = int(sw / target)
+        y0 = (sh - nh) // 2
+        src = src.crop((0, y0, sw, y0 + nh))
+    art = src.resize((w, h), Image.LANCZOS)
+    art = ImageEnhance.Color(art).enhance(1.25)
+    art = ImageEnhance.Contrast(art).enhance(1.08)
+    d = ImageDraw.Draw(art)
+    ch = 22
+    d.rectangle([8, h - ch, 122, h], fill=NAVY)
+    d.text((14, h - ch + 5), "PERSIAN GULF", font=font(SANS_B, 12), fill=(255, 255, 255))
+    return art
+
+
 def gulf_art(w, h):
     """Flat map of the Gulf for hero 2: Iran, Bahrain, Qeshm, drone path."""
     art = Image.new("RGB", (w, h), (190, 212, 228))
@@ -563,7 +615,7 @@ def build():
          "Ukraine brings down a span of Putin's Crimea bridge",
          "Two killed as drones and Flamingo missiles drop the road arch "
          "into the strait; Russia hits two Kyiv bridges in reply."),
-        (M + pw + 8, gulf_art(pw - 4, 104),
+        (M + pw + 8, gulf_photo(pw - 4, 104),
          "2  ·  MID EAST  ·  IRAN WAR",
          "Iran's Guards fire drones at US radar in Bahrain",
          "Tehran claims a hit on the Sheikh Isa radar; the US says all "
@@ -609,8 +661,8 @@ def build():
         y0 = gy0 + r * (ch + 8)
         d.rectangle([x0, y0, x0 + cw, y0 + ch], outline=(150, 140, 120), width=1)
         d.rectangle([x0, y0, x0 + cw, y0 + 3], fill=col)
-        # wide banner illustration across the top of the cell
-        banner_art(d, ICON_KIND[n], x0, y0 + 3, cw, 56, col)
+        # wide photorealistic photo banner across the top of the cell (v4)
+        img.paste(banner_photo(n, cw, 56), (x0, y0 + 3))
         # number badge over the banner's top-left corner
         d.ellipse([x0 + 5, y0 + 7, x0 + 25, y0 + 27], fill=col)
         badge = str(n)
@@ -683,7 +735,7 @@ def build():
            "Disputed claims are attributed.",
            font=font(SANS, 10), fill=GREY)
     d.text((M, fy + 17),
-           "Sources: AP, Reuters, AFP, BBC, Al Jazeera, UN News, WHO. Original drawings.",
+           "Sources: AP, Reuters, AFP, BBC, Al Jazeera, UN News, WHO. Photos generated for this entry.",
            font=font(SANS, 10), fill=GREY)
     d.text((M, fy + 28),
            "Dear judge — 40 stories, six continents, one day: this is Tuesday "
