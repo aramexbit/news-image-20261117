@@ -5,24 +5,25 @@
 [![reward](https://make.fun/badge/news-image-20261117/aramexbit/news-image-20261117/reward.svg)](https://make.fun/bounty/news-image-20261117?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261117)
 
 One image that sums up the world's news of Tuesday 17 November 2026: a
-newspaper front page in 36 stories — the Kerch Bridge brought down on the
+newspaper front page in 40 stories — the Kerch Bridge brought down on the
 second day of strikes, Iran's drones at the US radar in Bahrain, tankers
 hit by mines in the Strait of Hormuz, the first Quad leaders' meeting in
 two years in Manila ahead of the first Trump–Xi–Putin summit, Nvidia's
 record $115.8bn quarter, Ebola passing 11,000 cases in DR Congo, the US
-losing measles-free status, and 29 more — with a numbered world map and a
+losing measles-free status, and 33 more — with a numbered world map and a
 sources footer. `main.py` (Python 3.13, standard library only, no network)
 copies the image deterministically to the output directory.
 
 ## How the image was made
 
 `build_entry.py` (Python + Pillow, run locally) draws the whole front page
-from a list of verified stories: masthead, red BREAKING ribbon, a
-photorealistic photo hero of the Kerch Bridge (committed as
-`assets/hero-kerch.png`, cropped and colour-boosted deterministically),
-11 more stories each with its own small flat illustration in its region
-colour, 24 one-line briefs, a numbered world map, and a footer
-naming the sources. Facts were checked against live news reporting of
+from a list of verified stories: masthead, red BREAKING ribbon, two heroes
+side by side — a photorealistic photo of the Kerch Bridge (committed as
+`assets/hero-kerch.png`, cropped and colour-boosted deterministically) and
+a flat Gulf map for the Iran/Bahrain story — 12 more stories each with its
+own wide banner illustration in its region colour, 26 one-line briefs, a
+world map numbered for all 40 stories, and a footer naming the sources.
+Facts were checked against live news reporting of
 17 November 2026 (AP, Reuters, AFP, BBC, Al Jazeera, UN News, WHO);
 disputed claims are attributed in the image itself. Print effects are
 deliberately restrained and deterministic (seeded paper grain, vivid
